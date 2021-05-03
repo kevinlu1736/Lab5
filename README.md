@@ -5,7 +5,7 @@
 
 ## Part 1:
 
-LINK TO YOUR PUBLISHED SITE
+https://kevinlu1736.github.io/Lab5/
 
 ## Part 2:
 
