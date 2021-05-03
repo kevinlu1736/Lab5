@@ -1,10 +1,40 @@
 // script.js
 
 const img = new Image(); // used to load image from <input> and draw to canvas
+const canvas = document.querySelector("#user-image");
+const canvasContext = canvas.getContext('2d');
+const imageInput = document.querySelector('#image-input');
+const submitButton = document.querySelector('button[type="submit"]');
+const clearButton = document.querySelector('button[type="reset"]');
+const readButton = document.querySelector('button[type="button"]');
+const formObj = document.querySelector('#generate-meme');
+const textTop = document.querySelector('#text-top');
+const textBottom = document.querySelector('#text-bottom');
+const voiceSelector = document.querySelector('#voice-selection')
+const noneOption = document.querySelector('#voice-selection').children[0];
+const volumeImage = document.querySelector('#volume-group img');
+const volumeInput = document.querySelector('#volume-group input');
+const synth = window.speechSynthesis;
+let voices = [];
 
 // Fires whenever the img object loads a new image (such as with img.src =)
 img.addEventListener('load', () => {
   // TODO
+  //clear canvas and set background
+  canvasContext.clearRect(0, 0, canvas.width, canvas.height);
+  canvasContext.fillStyle = "black";
+  canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+
+
+  //draw image
+  let dimensions = getDimmensions(canvas.width, canvas.height, img.width, img.height);
+  canvasContext.drawImage(img, dimensions['startX'], dimensions['startY'], dimensions['width'], dimensions['height']);
+
+  //toggle buttons
+  submitButton.disabled = false;
+  clearButton.disabled = true;
+  readButton.disabled = true;
+
 
   // Some helpful tips:
   // - Fill the whole Canvas with black first to add borders on non-square images, then draw on top
@@ -50,4 +80,106 @@ function getDimmensions(canvasWidth, canvasHeight, imageWidth, imageHeight) {
   }
 
   return { 'width': width, 'height': height, 'startX': startX, 'startY': startY }
+}
+
+
+//Set up voice
+window.onload = setupVoiceIfExist;
+
+imageInput.addEventListener('change', ()=>{
+  let imgFile = imageInput.files[0];
+  img.src = URL.createObjectURL(imgFile);
+  img.alt = parseFileName(imageInput.value);
+});
+
+formObj.addEventListener('submit', (event)=>{
+  event.preventDefault();
+
+  drawCustomText(textTop.value, textBottom.value);
+
+  //toggle buttons
+  submitButton.disabled = true;
+  clearButton.disabled = false;
+  readButton.disabled = false;
+});
+
+clearButton.addEventListener('click', ()=>{
+  canvasContext.clearRect(0, 0, canvas.width, canvas.height);
+
+  //toggle buttons
+  submitButton.disabled = false;
+  clearButton.disabled = true;
+  readButton.disabled = true;
+});
+
+readButton.addEventListener('click', ()=>{
+  const utter = new SpeechSynthesisUtterance(textTop.value + " " + textBottom.value);
+  utter.voice = voices[voiceSelector.selectedIndex];
+  console.log(volumeInput.value);
+  utter.volume = volumeInput.value/100;
+  synth.speak(utter);
+});
+
+volumeInput.addEventListener('input', ()=>{
+   if(volumeInput.value >= 67) {
+    volumeImage.src = "icons/volume-level-3.svg";
+  } else if(volumeInput.value >= 34) {
+    volumeImage.src = "icons/volume-level-2.svg";
+  } else if(volumeInput.value >= 1) {
+    volumeImage.src = "icons/volume-level-1.svg";
+  } else {
+    volumeImage.src = "icons/volume-level-0.svg";
+  }
+});
+
+
+
+/*
+  Helpers
+ */
+
+function setupVoiceIfExist() {
+  voices = synth.getVoices();
+  if (voices.length > 0) {
+    voiceSelector.removeChild(noneOption);
+    for(let i = 0; i < voices.length; i++) {
+      let option = document.createElement('option');
+      option.textContent = voices[i].name + ' (' + voices[i].lang + ')';
+
+      if(voices[i].default) {
+        option.textContent += ' -- DEFAULT';
+      }
+
+      option.setAttribute('data-lang', voices[i].lang);
+      option.setAttribute('data-name', voices[i].name);
+      voiceSelector.appendChild(option);
+    }
+    voiceSelector.disabled = false;
+  } 
+}
+
+function drawCustomText(topText, bottomText) {
+
+  const fontSize = 40;
+  canvasContext.font = fontSize + 'px Arial';
+  canvasContext.fillStyle = '#FFFFFF';
+
+  const topMeasure = canvasContext.measureText(topText);
+  const bottomMeasure = canvasContext.measureText(bottomText);
+
+  const textTop1 = fontSize;
+  const textTop2 = canvas.height - fontSize/2;
+  const textLeft1 = (canvas.width-topMeasure.width)/2.0;
+  const textLeft2 = (canvas.width-bottomMeasure.width)/2.0;
+
+  canvasContext.strokeStyle = "#000000";
+  canvasContext.strokeText(topText, textLeft1, textTop1);
+  canvasContext.fillText(topText, textLeft1, textTop1);
+  canvasContext.strokeText(bottomText, textLeft2, textTop2);
+  canvasContext.fillText(bottomText, textLeft2, textTop2);
+}
+
+function parseFileName(pathStr) {
+  let lastDelimiterIndex = pathStr.lastIndexOf('\\') == -1 ? pathStr.lastIndexOf('/') : pathStr.lastIndexOf('\\');
+  return pathStr.substring(lastDelimiterIndex+1);
 }
