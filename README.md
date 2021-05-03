@@ -9,4 +9,6 @@ LINK TO YOUR PUBLISHED SITE
 
 ## Part 2:
 
-LINK TO YOUR PART 2 REPOSITORY
+https://github.com/kevinlu1736/github-actions-for-ci   
+
+Latest Issue: https://github.com/kevinlu1736/github-actions-for-ci/issues/7
